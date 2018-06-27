@@ -17,30 +17,6 @@
 package org.codehaus.mojo.nbm;
 
 import com.google.common.collect.Sets;
-import java.io.*;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
-import java.util.jar.JarOutputStream;
-import java.util.jar.Pack200;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.zip.CRC32;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.factory.ArtifactFactory;
 import org.apache.maven.artifact.repository.ArtifactRepository;
@@ -51,11 +27,7 @@ import org.apache.maven.artifact.resolver.ArtifactResolver;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugin.logging.Log;
-import org.apache.maven.plugins.annotations.Component;
-import org.apache.maven.plugins.annotations.LifecyclePhase;
-import org.apache.maven.plugins.annotations.Mojo;
-import org.apache.maven.plugins.annotations.Parameter;
-import org.apache.maven.plugins.annotations.ResolutionScope;
+import org.apache.maven.plugins.annotations.*;
 import org.apache.maven.project.MavenProject;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Project;
@@ -68,6 +40,20 @@ import org.codehaus.plexus.util.IOUtil;
 import org.codehaus.plexus.util.StringUtils;
 import org.codehaus.plexus.util.io.InputStreamFacade;
 import org.netbeans.nbbuild.MakeListOfNBM;
+
+import java.io.*;
+import java.net.URL;
+import java.util.*;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+import java.util.jar.JarOutputStream;
+import java.util.jar.Pack200;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.zip.CRC32;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 /**
  * Create the NetBeans module clusters/application for the 'nbm-application' packaging
@@ -140,7 +126,14 @@ public class CreateClusterAppMojo
      */
     @Parameter(defaultValue = "true", property = "netbeans.verify.integrity")
     private boolean verifyIntegrity;
-    
+
+    /**
+     * content of the subfolder will be copied into the app file structure
+     * @since 4.3
+     */
+    @Parameter(property = "netbeans.extra.dir")
+    private File extraDirectory;
+
     private final Collection<String> defaultPlatformTokens = Arrays.asList( new String[] {
                     "org.openide.modules.os.Windows",
                     "org.openide.modules.os.Unix",
@@ -682,6 +675,13 @@ public class CreateClusterAppMojo
         }
 
         FileUtils.fileWrite( clusterConf.getAbsolutePath(), clustersString );
+
+        File extraDir = this.extraDirectory;
+        if(extraDir!=null) {
+            File harnessDir = new File( buildDir, "harness" );
+            FileUtils.copyDirectory(extraDir, harnessDir);
+            getLog().info("Copied extra dir");
+        }
 
         File confFile = etcConfFile;
         String str;
