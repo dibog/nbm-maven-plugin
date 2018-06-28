@@ -129,9 +129,9 @@ public class CreateClusterAppMojo
 
     /**
      * content of the subfolder will be copied into the app file structure
-     * @since 4.3
+     * @since 4.2
      */
-    @Parameter(property = "netbeans.extra.dir")
+    @Parameter(defaultValue = "${project.build.sourceDirectory}/main/extra")
     private File extraDirectory;
 
     private final Collection<String> defaultPlatformTokens = Arrays.asList( new String[] {
@@ -677,10 +677,15 @@ public class CreateClusterAppMojo
         FileUtils.fileWrite( clusterConf.getAbsolutePath(), clustersString );
 
         File extraDir = this.extraDirectory;
-        if(extraDir!=null) {
-            File harnessDir = new File( buildDir, "harness" );
-            FileUtils.copyDirectory(extraDir, harnessDir);
-            getLog().info("Copied extra dir");
+        if(extraDir!=null && extraDir.exists()) {
+            if(extraDir.isDirectory()) {
+                //            File harnessDir = new File( buildDir, "harness" );
+                FileUtils.copyDirectoryStructure(extraDir, buildDir);
+                getLog().info("Copying extra dir '" + extraDir.getAbsolutePath() + "' to '" + buildDir.getAbsolutePath() + "'");
+            }
+            else {
+                getLog().warn("The specified exra dir '"+extraDir.getAbsolutePath()+"' is not a directory; ignoring it");
+            }
         }
 
         File confFile = etcConfFile;
